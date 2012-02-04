@@ -3,6 +3,8 @@
 这是淘宝API的一个简单灵活的Python客户端
 
 ##如何使用
+	# 引入该Client
+	from taobao import APIClient
 
 	client = APIClient('Your API Key','Your API Secret')
 	client.items_get(nicks='kamozi', fields='num_iid,title,price', page_no=1, page_size=2)
