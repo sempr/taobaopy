@@ -138,6 +138,7 @@ def _http_call(url, http_method, client, **kw):
         body = resp.read()
     else:
         body = resp
+    body = body.replace("\n","\\n").replace("\t","\\t")
     r = json.loads(body)
     if hasattr(r, 'error_code'):
         raise APIError(r.error_code, getattr(r, 'error', ''),\
