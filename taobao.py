@@ -61,7 +61,7 @@ def _encode_multipart(**kw):
             L.append('--' + BOUNDARY)
             L.append('Content-Disposition: form-data; name="%s"' % k)
             L.append('')
-            L.append(v)
+            L.append(str(v))
         else:
             filename = getattr(v, 'name')
             L.append('--' + BOUNDARY)
@@ -116,6 +116,14 @@ def _http_call(url, http_method, client, **kw):
     '''
     Do the Request
     '''
+
+    # clean kw first
+    for k,v in kw.items():
+        kk = k.replace('__','.')
+        if kk != k:
+            del kw[k]
+            kw[kk] = v
+
     app_key = client.client_id
     app_sec = client.client_secret
     sign_method, sign = _hash_sign(app_key, app_sec, sign_method='hmac', **kw)
@@ -138,7 +146,7 @@ def _http_call(url, http_method, client, **kw):
         body = resp.read()
     else:
         body = resp
-    body = body.replace("\n","\\n").replace("\t","\\t")
+    body = body.replace("\n","\\n").replace("\t","\\t")        
     r = json.loads(body)
     if hasattr(r, 'error_code'):
         raise APIError(r.error_code, getattr(r, 'error', ''),\
