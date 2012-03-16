@@ -13,28 +13,39 @@ import json
 import time
 import urllib
 import urllib2
-import logging
 import hashlib
 import hmac
 import mimetools
 import mimetypes
 from datetime import datetime
 
+import logging
+try:
+    logging.config.fileConfig('logging.ini')
+    api_logger = logging.getLogger('api')
+    api_error_logger = logging.getLogger('eapi')
+except :
+    ch = logging.StreamHandler()
+    logger = logging.getLogger()
+    logger.addHandler(ch)
+    api_logger = api_error_logger = logger
 
 class APIError(StandardError):
     '''
     raise APIError if got failed json message.
     '''
 
-    def __init__(self, error_code, error, request):
-        self.error_code = error_code
-        self.error = error
+    def __init__(self, request, code, msg, sub_code, sub_msg):
         self.request = request
-        StandardError.__init__(self, error)
+
+        self.code = code
+        self.msg = msg
+        self.sub_code = sub_code
+        self.sub_msg = sub_msg
+        StandardError.__init__(self, msg)
 
     def __str__(self):
-        return 'APIError: %s: %s, request: %s' % (self.error_code,\
-                                                  self.error, self.request)
+        return "%s|%s|%s|%s"%(str(self.code),self.msg,str(self.sub_code),self.sub_msg)
 
 
 def _get_content_type(filename):
@@ -61,7 +72,7 @@ def _encode_multipart(**kw):
             L.append('--' + BOUNDARY)
             L.append('Content-Disposition: form-data; name="%s"' % k)
             L.append('')
-            L.append(str(v))
+            L.append(v)
         else:
             filename = getattr(v, 'name')
             L.append('--' + BOUNDARY)
@@ -116,14 +127,6 @@ def _http_call(url, http_method, client, **kw):
     '''
     Do the Request
     '''
-
-    # clean kw first
-    for k,v in kw.items():
-        kk = k.replace('__','.')
-        if kk != k:
-            del kw[k]
-            kw[kk] = v
-
     app_key = client.client_id
     app_sec = client.client_secret
     sign_method, sign = _hash_sign(app_key, app_sec, sign_method='hmac', **kw)
@@ -146,11 +149,19 @@ def _http_call(url, http_method, client, **kw):
         body = resp.read()
     else:
         body = resp
-    body = body.replace("\n","\\n").replace("\t","\\t")        
+    body = body.replace("\n","\\n").replace("\t","\\t")
+#    body here
+    sign_args = "|".join((app_key,sign,sign_method))
+    req_args = json.dumps(kw,ensure_ascii=False)
+    resp_args = body
+    log_data = '%s [{>.<}] %s [{>.<}] %s'%(sign_args, req_args, resp_args)
+
+    api_logger.info(log_data)
     r = json.loads(body)
-    if hasattr(r, 'error_code'):
-        raise APIError(r.error_code, getattr(r, 'error', ''),\
-            getattr(r, 'request', ''))
+    if 'error_response' in r:
+        r2 = r['error_response']
+        api_error_logger.warn(log_data)
+        raise APIError(req_args, r2.get('code'), r2.get('msg'), r2.get('sub_code'), r2.get('sub_msg'))
     return r
 
 
@@ -176,8 +187,14 @@ class HttpObject(object):
 
 
 def _default_fetcher(request):
-    r = urllib2.urlopen(request, timeout=5)
-    return r.read()
+    for i in xrange(3):
+        try:
+            r = urllib2.urlopen(request, timeout=5)
+            data = r.read()
+            return data
+        except:
+            pass
+    return
 
 
 class APIClient(object):

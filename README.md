@@ -1,6 +1,10 @@
 #简介
 
-这是淘宝API的一个简单灵活的Python客户端
+这是淘宝API的一个简单灵活的Python客户端，由美折团队开发、维护
+
+目前已在两个产品上使用([美折](http://fuwu.taobao.com/serv/detail.htm?service_id=11496&tracelog=pythonsdk),[美印](http://fuwu.taobao.com/serv/detail.htm?service_id=15665&tracelog=pythonsdk))，日调用量过百万。
+
+有任何问题欢迎[提交issue](https://bitbucket.org/sempr/taobaopy/issues/new)，或者联系邮箱：<hi@aimeizhe.com>
 
 ##如何使用
 
@@ -11,6 +15,10 @@
 	client.items_get(nicks='kamozi', fields='num_iid,title,price', page_no=1, page_size=2)
 
 对于淘宝的某个API,比如 taobao.AA.BB.CC.DD 调用的函数名为 AA_BB_CC_DD，即将前面的taobao.去掉 后面的.全部换成 '_' 
+
+如果淘宝的某个API的参数中有'.'，需要把'.'换成两个下划线__,比如
+    
+    client.item_update(location__state='杭州',num_iid='XXXXXX',session=xxxx)
 
 对于get请求 client.get.AA_BB_CC_DD中 get可以省略 即 client.AA_BB_CC_DD
 
