@@ -56,11 +56,7 @@ def _encode_params(**kw):
     '''
     Encode parameters.
     '''
-    args = []
-    for k, v in kw.iteritems():
-        qv = v.encode('utf-8') if isinstance(v, unicode) else str(v)
-        args.append('%s=%s' % (k, urllib.quote(qv)))
-    return '&'.join(args)
+    return urllib.urlencode(kw)
 
 
 def _encode_multipart(**kw):
@@ -107,13 +103,9 @@ def _http_upload(url, authorization=None, **kw):
     return _http_call(url, _HTTP_UPLOAD, authorization, **kw)
 
 
-def _hash_sign(client_id, client_secret, sign_method='md5', **kw):
-    args = {'app_key': client_id, 'sign_method': sign_method}
-    for k, v in kw.items():
-        if hasattr(v, 'read'):
-            continue
-        args[k] = v.encode('utf-8') if isinstance(v, unicode) else str(v)
-    args_str = "".join(["%s%s" % (k, args[k]) for k in sorted(args.keys())])
+def _hash_sign(client_secret, **kw):
+    sign_method = kw['sign_method']
+    args_str = "".join(["%s%s" % (k, kw[k]) for k in sorted(kw.keys()) if not isinstance(kw[k], file)])
     if sign_method == 'md5':
         sign = hashlib.md5(client_secret + args_str + client_secret)
         return ('md5', sign.hexdigest().upper())
@@ -122,28 +114,53 @@ def _hash_sign(client_id, client_secret, sign_method='md5', **kw):
         sign.update(args_str)
         return ('hmac', sign.hexdigest().upper())
 
-
-def _http_call(url, http_method, client, **kw):
+def _http_build_req(url, http_method, client, **kw):
     '''
     Do the Request
     '''
     app_key = client.client_id
     app_sec = client.client_secret
-    sign_method, sign = _hash_sign(app_key, app_sec, sign_method='hmac', **kw)
-    params = None
+
+    # parse args here
+    kww = {}
+    for k,v in kw.iteritems():
+        if k.find('__'): k = k.replace('__','.')
+        if isinstance(v, file):
+            kww[k] = v #File
+        else: # Not File
+            if isinstance(v,datetime):
+                kww[k] = v.strftime('%Y-%m-%d %H:%M:%S')
+            elif isinstance(v,unicode):
+                kww[k] = v.encode('utf-8')
+            elif isinstance(v,str):
+                kww[k] = v
+            elif isinstance(v,float):
+                kww[k] = "%.2f"%v
+            elif isinstance(v,int):
+                kww[k] = str(v)
+            else:
+                kww[k] = str(v)
+
+    args = {'app_key': app_key, 'sign_method': 'hmac'}
+    kww.update(args)
+    sign_method, sign = _hash_sign(app_sec, **kww)
+    kww['sign'],kww['sign_method'] = sign, sign_method
     boundary = None
     if http_method == _HTTP_UPLOAD:
-        params, boundary = _encode_multipart(app_key=app_key,\
-            sign=sign, sign_method=sign_method, **kw)
+        params, boundary = _encode_multipart(**kww)
     else:
-        params = _encode_params(app_key=app_key, sign=sign,\
-            sign_method=sign_method, **kw)
+        params = _encode_params(**kww)
     http_url = '%s?%s' % (url, params) if http_method == _HTTP_GET else url
     http_body = None if http_method == _HTTP_GET else params
     req = urllib2.Request(http_url, data=http_body)
     if boundary:
         req.add_header('Content-Type', 'multipart/form-data; boundary=%s'\
         % boundary)
+    for k in kww: kww[k] = str(kww)
+    return req,kww
+
+def _http_call(url, http_method, client, **kw):
+    req,kww = _http_build_req(url,http_method,client,**kw)
     resp = client.fetcher(req)
     if hasattr(resp, 'read'):
         body = resp.read()
@@ -151,8 +168,8 @@ def _http_call(url, http_method, client, **kw):
         body = resp
     body = body.replace("\n","\\n").replace("\t","\\t")
 #    body here
-    sign_args = "|".join((app_key,sign,sign_method))
-    req_args = json.dumps(kw,ensure_ascii=False)
+    sign_args = "-"
+    req_args = json.dumps(kww,ensure_ascii=False)
     resp_args = body
     log_data = '%s [{>.<}] %s [{>.<}] %s'%(sign_args, req_args, resp_args)
 
