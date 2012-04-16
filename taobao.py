@@ -156,7 +156,8 @@ def _http_build_req(url, http_method, client, **kw):
     if boundary:
         req.add_header('Content-Type', 'multipart/form-data; boundary=%s'\
         % boundary)
-    for k in kww: kww[k] = str(kww)
+    keys = [k for k,v in kww.items() if not isinstance(v, str)]
+    for k in keys: kww[k] = str(kww[k])
     return req,kww
 
 def _http_call(url, http_method, client, **kw):
