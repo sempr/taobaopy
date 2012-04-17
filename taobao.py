@@ -20,6 +20,7 @@ import mimetypes
 from datetime import datetime
 
 import logging
+import logging.config
 try:
     logging.config.fileConfig('logging.ini')
     api_logger = logging.getLogger('api')
@@ -162,14 +163,16 @@ def _http_build_req(url, http_method, client, **kw):
 
 def _http_call(url, http_method, client, **kw):
     req,kww = _http_build_req(url,http_method,client,**kw)
+    start = time.time()
     resp = client.fetcher(req)
+    api_call_time = time.time() - start
     if hasattr(resp, 'read'):
         body = resp.read()
     else:
         body = resp
     body = body.replace("\n","\\n").replace("\t","\\t")
 #    body here
-    sign_args = "-"
+    sign_args = "%.6fms"%(api_call_time*1000)
     req_args = json.dumps(kww,ensure_ascii=False)
     resp_args = body
     log_data = '%s [{>.<}] %s [{>.<}] %s'%(sign_args, req_args, resp_args)
@@ -204,7 +207,7 @@ class HttpObject(object):
         return wrap
 
 
-def _default_fetcher(request):
+def _default_fetcher(request, debug=0):
     for i in xrange(3):
         try:
             r = urllib2.urlopen(request, timeout=5)
@@ -214,13 +217,37 @@ def _default_fetcher(request):
             pass
     return
 
+try:
+    import pycurl
+    import StringIO
+    def _pycurl_fetcher(req,debug=False):
+        "pycurl fetcher without debug"
+        b = StringIO.StringIO()
+        url = req.get_full_url()
+        c = pycurl.Curl()
+        c.setopt(pycurl.URL, url)
+        c.setopt(pycurl.WRITEFUNCTION, b.write)
+        c.setopt(pycurl.FOLLOWLOCATION, 1)
+        c.setopt(pycurl.MAXREDIRS, 5)
+        if req.get_method() == 'POST':
+            c.setopt(pycurl.POSTFIELDS, req.get_data())
+            c.setopt(pycurl.POST, 1)
+        if req.has_header('Content-type'):
+            c.setopt(pycurl.HTTPHEADER, [": ".join(x) for x in req.header_items()])
+        if debug:
+            c.setopt(pycurl.VERBOSE, 1)
+        c.perform()
+        return b.getvalue()
+
+except ImportError:
+    _pycurl_fetcher = _default_fetcher
 
 class APIClient(object):
     '''
     API client using synchronized invocation.
     '''
 
-    def __init__(self, app_key, app_secret, fetcher=_default_fetcher,\
+    def __init__(self, app_key, app_secret, fetcher=_pycurl_fetcher,\
                  sign_method='hmac', domain='gw.api.taobao.com'):
         self.client_id = app_key
         self.client_secret = app_secret

@@ -1,4 +1,5 @@
 from taobao import *
+import sys
 
 def _debug_fetcher(request,debug=True):
     "A debug fetcher for urllib2"
@@ -39,20 +40,22 @@ def _pycurl_debug(req):
     return _pycurl_fetcher(req,debug=True)
         
 def test():
-    key = 'Your API KEY HERE'
-    sec = 'Your API SECRET HERE'
-    token = 'Your Session Key HERE'
-
+    import config
+    key = config.key
+    sec = config.sec
+    token = config.token
+    if key[:3]=='put':
+        print "Please put your appkey,appsec and test key in config.py"
+        sys.exit(1)
     # build APIClient with default fetcher 
-    client = APIClient(key,sec)#,fetcher=_my_fetcher)
+    client = APIClient(key,sec,fetcher=_debug_fetcher)
     # use pycurl fetcher
 #    client = APIClient(key,sec,fetcher=_pycurl_fetcher)
     print client.post.items_get(nicks='kamozi',fields='num_iid,title,price',page_no=1,page_size=2)
-    
     print client.user_get(fields='nick,uid,user_id,email',session=token)
 
-#    return
-    NUM_IID = 'Your Numiid HERE'
+    NUM_IID = config.num_iid 
+
     client.set_fetcher(_pycurl_debug)
     print client.upload.item_img_upload(num_iid=NUM_IID,is_major='true',image=open("logo.png","rb"),session=token)
 
