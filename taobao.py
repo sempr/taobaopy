@@ -43,10 +43,10 @@ class APIError(StandardError):
         self.msg = msg
         self.sub_code = sub_code
         self.sub_msg = sub_msg
-        StandardError.__init__(self, msg)
+        StandardError.__init__(self, self.__str__())
 
     def __str__(self):
-        return "%s|%s|%s|%s"%(str(self.code),self.msg,str(self.sub_code),self.sub_msg)
+        return "%s|%s|%s|%s|%s"%(str(self.code),self.msg,str(self.sub_code),self.sub_msg,self.request)
 
 
 def _get_content_type(filename):
