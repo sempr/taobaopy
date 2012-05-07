@@ -48,6 +48,9 @@ class APIError(StandardError):
     def __str__(self):
         return "%s|%s|%s|%s|%s"%(str(self.code),self.msg,str(self.sub_code),self.sub_msg,self.request)
 
+    def str2(self):
+        return "%s|%s|%s|%s"%(str(self.code),self.msg,str(self.sub_code),self.sub_msg)
+
 
 def _get_content_type(filename):
     return mimetypes.guess_type(filename)[0] or 'application/octet-stream'
@@ -71,7 +74,7 @@ def _encode_multipart(**kw):
             L.append('')
             L.append(v)
         else:
-            filename = getattr(v, 'name')
+            filename = getattr(v, 'name').encode('us-ascii', 'ignore')
             L.append('--' + BOUNDARY)
             L.append('Content-Disposition: form-data; name="%s"; \
                     filename="%s"' % (k, filename))
