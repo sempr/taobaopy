@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+import gzip
 
 __version__ = '1.00'
 __author__ = 'Fred Wang (i#1e20.com)'
@@ -21,17 +22,16 @@ from datetime import datetime
 
 import logging
 import logging.config
-try:
-    logging.config.fileConfig('logging.ini')
-    api_logger = logging.getLogger('api')
-    api_error_logger = logging.getLogger('eapi')
-except :
-    ch = logging.StreamHandler()
-    logger = logging.getLogger()
-    logger.addHandler(ch)
-    api_logger = api_error_logger = logger
 
-class APIError(StandardError):
+#try:
+#    logging.config.fileConfig('logging.ini')
+#except:
+#    raise
+
+api_logger = logging.getLogger('taobao_api')
+api_error_logger = logging.getLogger('taobao_api_error')
+
+class TaoBaoAPIError(StandardError):
     '''
     raise APIError if got failed json message.
     '''
@@ -173,19 +173,26 @@ def _http_call(url, http_method, client, **kw):
         body = resp.read()
     else:
         body = resp
-    body = body.replace("\n","\\n").replace("\t","\\t")
+    if body: body = body.replace("\n","\\n").replace("\t","\\t")
+    else: body = '{"error_response":{"msg": "empty body", "sub_code": "mz.emptybody", "code": 301, "sub_msg": "empty http response body"}}'
 #    body here
     sign_args = "%.6fms"%(api_call_time*1000)
     req_args = json.dumps(kww,ensure_ascii=False)
     resp_args = body
     log_data = '%s [{>.<}] %s [{>.<}] %s'%(sign_args, req_args, resp_args)
 
-    api_logger.info(log_data)
-    r = json.loads(body)
-    if 'error_response' in r:
-        r2 = r['error_response']
+    api_logger.debug(log_data)
+    try:
+        r = json.loads(body)
+    except ValueError,e:
+        r = {u'error_response': {u'msg': u'json decode error', u'sub_code': u'mz.json_error', u'code': 301, u'sub_msg': str(e)}}
+    if not r or 'error_response' in r:
         api_error_logger.warn(log_data)
-        raise APIError(req_args, r2.get('code'), r2.get('msg'), r2.get('sub_code'), r2.get('sub_msg'))
+        if r:
+            r2 = r['error_response']
+            raise TaoBaoAPIError(req_args, r2.get('code'), r2.get('msg'), r2.get('sub_code'), r2.get('sub_msg'))
+        else:
+            raise TaoBaoAPIError(req_args,'0','json format error','0','0')
     return r
 
 
@@ -222,30 +229,39 @@ def _default_fetcher(request, debug=0):
 
 try:
     import pycurl
-    import StringIO
+    from StringIO import StringIO
     def _pycurl_fetcher(req,debug=False):
         "pycurl fetcher without debug"
-        b = StringIO.StringIO()
+        b = StringIO()
+        h = StringIO()
         url = req.get_full_url()
         c = pycurl.Curl()
         c.setopt(pycurl.URL, url)
         c.setopt(pycurl.WRITEFUNCTION, b.write)
+        c.setopt(pycurl.HEADERFUNCTION, h.write)
         c.setopt(pycurl.FOLLOWLOCATION, 1)
         c.setopt(pycurl.MAXREDIRS, 5)
         if req.get_method() == 'POST':
             c.setopt(pycurl.POSTFIELDS, req.get_data())
             c.setopt(pycurl.POST, 1)
-        if req.has_header('Content-type'):
-            c.setopt(pycurl.HTTPHEADER, [": ".join(x) for x in req.header_items()])
+        headers = [": ".join(x) for x in req.header_items()]
+        headers.append('Accept-Encoding: gzip')
+        c.setopt(pycurl.HTTPHEADER, headers)
+
         if debug:
             c.setopt(pycurl.VERBOSE, 1)
         c.perform()
+        # parse headers
+        headers = dict([tuple(x.split(': ')[:2]) for x in h.getvalue().split('\r\n') if x and x.find(':')>0])
+        if headers.get('Content-Encoding') == 'gzip':
+            f = gzip.GzipFile(fileobj=StringIO(b.getvalue()))
+            return f.read()
         return b.getvalue()
 
 except ImportError:
     _pycurl_fetcher = _default_fetcher
 
-class APIClient(object):
+class TaoBaoAPIClient(object):
     '''
     API client using synchronized invocation.
     '''
@@ -274,4 +290,7 @@ class APIClient(object):
         return not self.access_token or time.time() > self.expires
 
     def __getattr__(self, attr):
-        return getattr(self.get, attr)
+        return getattr(self.post, attr)
+
+class APIClient(TaoBaoAPIClient): pass
+class APIError(TaoBaoAPIError):pass
