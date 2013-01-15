@@ -31,6 +31,8 @@ import logging.config
 api_logger = logging.getLogger('taobao_api')
 api_error_logger = logging.getLogger('taobao_api_error')
 
+RETRY_SUB_CODES = set(['isp.top-remote-unknown-error', 'isp.top-remote-connection-timeout','isp.remote-connection-error','isp.top-remote-service-unavailable','isp.top-remote-connection-timeout-tmall'])
+
 class TaoBaoAPIError(StandardError):
     '''
     raise APIError if got failed json message.
@@ -164,10 +166,9 @@ def _http_build_req(url, http_method, client, **kw):
     for k in keys: kww[k] = str(kww[k])
     return req,kww
 
-def _http_call(url, http_method, client, **kw):
-    req,kww = _http_build_req(url,http_method,client,**kw)
+def _http_call_item(cli_,req,kww):
+    resp = cli_.fetcher(req)
     start = time.time()
-    resp = client.fetcher(req)
     api_call_time = time.time() - start
     if hasattr(resp, 'read'):
         body = resp.read()
@@ -195,6 +196,16 @@ def _http_call(url, http_method, client, **kw):
             raise TaoBaoAPIError(req_args,'0','json format error','0','0')
     return r
 
+def _http_call(url, http_method, client, **kw):
+    req,kww = _http_build_req(url,http_method,client,**kw)
+    for tries in xrange(3,-1,-1):
+        try:
+            r = _http_call_item(client,req,kww)
+            return r
+        except TaoBaoAPIError,e:
+            if tries == 0: raise
+            if e.sub_code in RETRY_SUB_CODES: continue
+            raise
 
 class HttpObject(object):
     def __init__(self, client, http_method):
