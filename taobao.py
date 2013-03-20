@@ -133,7 +133,7 @@ def _http_build_req(url, http_method, client, **kw):
         if k.find('__'): k = k.replace('__','.')
         if isinstance(v, file):
             kww[k] = v #File
-        else: # Not File
+        elif v: # Not File
             if isinstance(v,datetime):
                 kww[k] = v.strftime('%Y-%m-%d %H:%M:%S')
             elif isinstance(v,unicode):
