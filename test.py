@@ -1,19 +1,24 @@
-from taobao import *
 import sys
 
-def _debug_fetcher(request,debug=True):
+from taobaopy.taobao import *
+import config
+
+
+def _debug_fetcher(request, debug=True):
     "A debug fetcher for urllib2"
     if debug:
         level = 1
     else:
-        level = 0    
+        level = 0
     opener = urllib2.build_opener(urllib2.HTTPHandler(debuglevel=level))
-    return opener.open(request,timeout=5)
+    return opener.open(request, timeout=5)
+
 
 try:
     import pycurl
     import StringIO
-    def _pycurl_fetcher(req,debug=False):
+
+    def _pycurl_fetcher(req, debug=False):
         "pycurl fetcher without debug"
         b = StringIO.StringIO()
         url = req.get_full_url()
@@ -35,33 +40,35 @@ try:
 except ImportError:
     _pycurl_fetcher = _debug_fetcher
 
+
 def _pycurl_debug(req):
     "pycurl fetcher with debug"
-    return _pycurl_fetcher(req,debug=True)
-        
+    return _pycurl_fetcher(req, debug=True)
+
+
 def test():
-    import config
     key = config.key
     sec = config.sec
     token = config.token
-    if key[:3]=='put':
+    if key[:3] == 'put':
         print "Please put your appkey,appsec and test key in config.py"
         sys.exit(1)
-    # build APIClient with default fetcher 
-    client = APIClient(key,sec,fetcher=_debug_fetcher)
+        # build APIClient with default fetcher
+    client = APIClient(key, sec, fetcher=_debug_fetcher)
     # use pycurl fetcher
-#    client = APIClient(key,sec,fetcher=_pycurl_fetcher)
-    print client.post.items_get(nicks='kamozi',fields='num_iid,title,price',page_no=1,page_size=2)
-    print client.user_get(fields='nick,uid,user_id,email',session=token)
+    #    client = APIClient(key,sec,fetcher=_pycurl_fetcher)
+    print client.post.items_get(nicks='kamozi', fields='num_iid,title,price', page_no=1, page_size=2)
+    print client.user_get(fields='nick,uid,user_id,email', session=token)
 
-    NUM_IID = config.num_iid 
+    NUM_IID = config.num_iid
 
     client.set_fetcher(_pycurl_debug)
-    print client.upload.item_img_upload(num_iid=NUM_IID,is_major='true',image=open("logo.png","rb"),session=token)
+    print client.upload.item_img_upload(num_iid=NUM_IID, is_major='true', image=open("logo.png", "rb"), session=token)
 
     client.set_fetcher(_pycurl_fetcher)
     client.set_access_token(token)
-    print client.upload.item_img_upload(num_iid=NUM_IID,is_major='true',image=open("logo.png","rb"))
+    print client.upload.item_img_upload(num_iid=NUM_IID, is_major='true', image=open("logo.png", "rb"))
+
 
 if __name__ == '__main__':
     test()

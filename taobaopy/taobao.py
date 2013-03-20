@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 __version__ = '1.1'
-__author__ = 'Fred Wang (taobao-sdk@1e20.com)'
+__author__ = 'Fred Wang (taobao-pysdk@1e20.com)'
 
 '''
 Python client SDK for taobao API.
