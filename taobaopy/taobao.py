@@ -1,11 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""Python client SDK for taobao API.
-Many thanks to http://code.google.com/p/sinaweibopy/
+"""Python client SDK for TaoBao API.
 """
 import json
 
-__version__ = '3.0'
+__version__ = '3.1.0'
 __author__ = 'Fred Wang (taobao-pysdk@1e20.com)'
 
 import time
@@ -18,8 +17,11 @@ from datetime import datetime
 api_logger = logging.getLogger('taobao_api')
 api_error_logger = logging.getLogger('taobao_api_error')
 
-RETRY_SUB_CODES = {'isp.top-remote-unknown-error', 'isp.top-remote-connection-timeout', 'isp.remote-connection-error',
-                   'isp.top-remote-service-unavailable', 'isp.top-remote-connection-timeout-tmall', 'mz.emptybody'}
+RETRY_SUB_CODES = {'isp.top-remote-unknown-error', 'isp.top-remote-connection-timeout',
+                   'isp.remote-connection-error', 'mz.emptybody',
+                   'isp.top-remote-service-unavailable', 'isp.top-remote-connection-timeout-tmall',
+                   'isp.item-update-service-error:GENERIC_FAILURE',
+                   'isp.item-update-service-error:IC_SYSTEM_NOT_READY_TRY_AGAIN_LATER'}
 
 VALUE_TO_STR = {
     type(datetime.now()): lambda v: v.strftime('%Y-%m-%d %H:%M:%S'),
@@ -37,8 +39,10 @@ class BaseAPIRequest:
     def __init__(self, url, client, values):
         self.url = url
         self.values = values
+        self.client = client
         self.key = client.client_id
         self.sec = client.client_secret
+        self.retry_sub_codes = client.retry_sub_codes
 
     def sign(self):
         """Return encoded data and files
@@ -66,9 +70,9 @@ class BaseAPIRequest:
         ts_start = time.time()
         data, files = self.sign()
         ret = {}
-        for try_id in xrange(3, -1, -1):
+        for try_id in xrange(self.client.retry_count, 0, -1):
             ret = self.open(data, files)
-            if 'error_response' in ret and ret['error_response'].get('sub_code') in RETRY_SUB_CODES:
+            if 'error_response' in ret and ret['error_response'].get('sub_code') in self.retry_sub_codes:
                 continue
             else:
                 break
@@ -76,7 +80,7 @@ class BaseAPIRequest:
         files2 = dict([(k, str(v)) for k, v in files.items()])
         data.update(**files2)
         log_data = '%.2fms [{>.<}] %s [{>.<}] %s [{>.<}] %s' % (
-        ts_used, data.get('method'), json.dumps(data), json.dumps(ret))
+            ts_used, data.get('method'), json.dumps(data), json.dumps(ret))
         api_logger.debug(log_data)
         if 'error_response' in ret:
             r = ret['error_response']
@@ -136,7 +140,9 @@ class HttpObject(object):
 
 class TaoBaoAPIClient(object):
     """API client using synchronized invocation."""
-    def __init__(self, app_key, app_secret, domain='gw.api.taobao.com', fetcher_class=DefaultAPIRequest, **kw):
+
+    def __init__(self, app_key, app_secret, domain='gw.api.taobao.com', fetcher_class=DefaultAPIRequest,
+                 retry_sub_codes=None, retry_count=3, **kw):
         """Init API Client"""
         self.client_id = app_key
         self.client_secret = app_secret
@@ -147,6 +153,8 @@ class TaoBaoAPIClient(object):
         self.get = HttpObject(self)
         self.post = HttpObject(self)
         self.upload = HttpObject(self)
+        self.retry_sub_codes = retry_sub_codes if retry_sub_codes else RETRY_SUB_CODES
+        self.retry_count = retry_count
 
     def set_access_token(self, access_token, expires_in=2147483647):
         """Set Default Access Token To This Client"""
