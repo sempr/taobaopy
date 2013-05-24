@@ -27,6 +27,7 @@ VALUE_TO_STR = {
     type(datetime.now()): lambda v: v.strftime('%Y-%m-%d %H:%M:%S'),
     type(u'a'): lambda v: v.encode('utf-8'),
     type(0.1): lambda v: "%.2f" % v,
+    type(True): lambda v: str(v).lower(),
     type(None): lambda x: ''
 }
 
