@@ -99,7 +99,12 @@ class DefaultAPIRequest(BaseAPIRequest):
 
     def open(self, data, files):
         r = requests.post(self.url, data, files=files, headers={'Accept-Encoding': 'gzip'})
-        return r.json()
+        try:
+            return r.json()
+        except ValueError, e:
+            return {
+                "error_response": {"msg": "json decode error", "sub_code": "ism.json-decode-error",
+                                   "code": 15, "sub_msg": "json-error: %s || %s" % (str(e), r.text)}}
 
 
 class TaoBaoAPIError(StandardError):
