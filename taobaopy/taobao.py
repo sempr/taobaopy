@@ -29,7 +29,6 @@ VALUE_TO_STR = {
     type(u'a'): lambda v: v.encode('utf-8'),
     type(0.1): lambda v: "%.2f" % v,
     type(True): lambda v: str(v).lower(),
-    type(None): lambda x: ''
 }
 
 DEFAULT_VALUE_TO_STR = lambda x: str(x)
@@ -59,7 +58,7 @@ class BaseAPIRequest:
             kk = k.replace('__', '.')
             if hasattr(v, 'read'):
                 files[kk] = v
-            else:
+            elif v is not None:
                 data[kk] = VALUE_TO_STR.get(type(v), DEFAULT_VALUE_TO_STR)(v)
 
         args_str = "".join(["%s%s" % (k, data[k]) for k in sorted(data.keys())])
