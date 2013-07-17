@@ -21,7 +21,8 @@ RETRY_SUB_CODES = {'isp.top-remote-unknown-error', 'isp.top-remote-connection-ti
                    'isp.remote-connection-error', 'mz.emptybody',
                    'isp.top-remote-service-unavailable', 'isp.top-remote-connection-timeout-tmall',
                    'isp.item-update-service-error:GENERIC_FAILURE',
-                   'isp.item-update-service-error:IC_SYSTEM_NOT_READY_TRY_AGAIN_LATER'}
+                   'isp.item-update-service-error:IC_SYSTEM_NOT_READY_TRY_AGAIN_LATER',
+                   'ism.json-decode-error'}
 
 VALUE_TO_STR = {
     type(datetime.now()): lambda v: v.strftime('%Y-%m-%d %H:%M:%S'),
@@ -134,7 +135,11 @@ class HttpObject(object):
 
     def __getattr__(self, attr):
         def wrap(**kw):
-            method = "taobao." + attr.replace('_', '.')
+            if attr.find('__') >= 0:
+                attr2 = attr.split('__', 2)
+                method = attr2[0] + '.' + attr2[1].replace('_', '.')
+            else:
+                method = "taobao." + attr.replace('_', '.')
             kw['method'] = method
             if not self.client.is_expires():
                 kw['session'] = self.client.access_token
