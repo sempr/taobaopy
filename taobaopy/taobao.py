@@ -4,7 +4,7 @@
 """
 import json
 
-__version__ = '3.2.0'
+__version__ = '3.4.0'
 __author__ = 'Fred Wang (taobao-pysdk@1e20.com)'
 
 import time
@@ -58,6 +58,7 @@ class BaseAPIRequest:
         for k, v in self.values.items() + args.items():
             kk = k.replace('__', '.')
             if hasattr(v, 'read'):
+                v.seek(0)
                 files[kk] = v
             else:
                 data[kk] = VALUE_TO_STR.get(type(v), DEFAULT_VALUE_TO_STR)(v)
