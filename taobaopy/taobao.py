@@ -4,7 +4,7 @@
 """
 import json
 
-__version__ = '3.4.0'
+__version__ = '3.5.0'
 __author__ = 'Fred Wang (taobao-pysdk@1e20.com)'
 
 import time
