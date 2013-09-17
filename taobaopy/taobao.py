@@ -22,7 +22,7 @@ RETRY_SUB_CODES = {'isp.top-remote-unknown-error', 'isp.top-remote-connection-ti
                    'isp.top-remote-service-unavailable', 'isp.top-remote-connection-timeout-tmall',
                    'isp.item-update-service-error:GENERIC_FAILURE',
                    'isp.item-update-service-error:IC_SYSTEM_NOT_READY_TRY_AGAIN_LATER',
-                   'ism.json-decode-error'}
+                   'ism.json-decode-error', 'ism.demo-error'}
 
 VALUE_TO_STR = {
     type(datetime.now()): lambda v: v.strftime('%Y-%m-%d %H:%M:%S'),
@@ -57,7 +57,6 @@ class BaseAPIRequest:
         for k, v in self.values.items() + args.items():
             kk = k.replace('__', '.')
             if hasattr(v, 'read'):
-                v.seek(0)
                 files[kk] = v
             elif v is not None:
                 data[kk] = VALUE_TO_STR.get(type(v), DEFAULT_VALUE_TO_STR)(v)
@@ -74,6 +73,8 @@ class BaseAPIRequest:
         ret = {}
         for try_id in xrange(self.client.retry_count, 0, -1):
             ret = self.open(data, files)
+            for file in files.values():
+                file.seek(0)
             if 'error_response' in ret and ret['error_response'].get('sub_code') in self.retry_sub_codes:
                 continue
             else:
