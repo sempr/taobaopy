@@ -1,12 +1,25 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""Python client SDK for TaoBao API.
+
 """
-import json
+TaoBao Python SDK
+~~~~~~~~~~~~~~~~~~~~~
 
-__version__ = '3.5.0'
+usage:
+
+   >>> from taobaopy.taobao import TaoBaoAPIError, TaoBaoAPIClient
+   >>> cli_ = TaoBaoAPIClient(__YOUR_APP_KEY__, __YOUR_APP_SECRET__)
+   >>> r = cli_.item_get(num_iid='1234567', fields='num_iid,title,price,pic_url')
+   >>> print r
+"""
+
 __author__ = 'Fred Wang (taobao-pysdk@1e20.com)'
+__title__ = 'taobaopy'
+__version__ = '3.7.0'
+__license__ = 'BSD License'
+__copyright__ = 'Copyright 2013 Fred Wang'
 
+import json
 import time
 import hmac
 import requests
@@ -103,10 +116,14 @@ class DefaultAPIRequest(BaseAPIRequest):
         r = requests.post(self.url, data, files=files, headers={'Accept-Encoding': 'gzip'})
         try:
             return r.json()
-        except ValueError, e:
-            return {
-                "error_response": {"msg": "json decode error", "sub_code": "ism.json-decode-error",
-                                   "code": 15, "sub_msg": "json-error: %s || %s" % (str(e), r.text)}}
+        except ValueError:
+            try:
+                text = r.text.replace('\t', '\\t').replace('\n', '\\n').replace('\r', '\\r')
+                return json.loads(text)
+            except ValueError, e:
+                return {
+                    "error_response": {"msg": "json decode error", "sub_code": "ism.json-decode-error",
+                                       "code": 15, "sub_msg": "json-error: %s || %s" % (str(e), r.text)}}
 
 
 class TaoBaoAPIError(StandardError):
