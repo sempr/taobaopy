@@ -7,15 +7,16 @@ TaoBao Python SDK
 
 usage:
 
-   >>> from taobaopy.taobao import TaoBaoAPIError, TaoBaoAPIClient
+   >>> from taobaopy.taobao import TaoBaoAPIClient
    >>> cli_ = TaoBaoAPIClient(__YOUR_APP_KEY__, __YOUR_APP_SECRET__)
    >>> r = cli_.item_get(num_iid='1234567', fields='num_iid,title,price,pic_url')
    >>> print r
 """
+from requests.adapters import HTTPAdapter
 
 __author__ = 'Fred Wang (taobao-pysdk@1e20.com)'
 __title__ = 'taobaopy'
-__version__ = '3.7.0'
+__version__ = '3.8.0'
 __license__ = 'BSD License'
 __copyright__ = 'Copyright 2013 Fred Wang'
 
@@ -47,7 +48,7 @@ VALUE_TO_STR = {
 DEFAULT_VALUE_TO_STR = lambda x: str(x)
 
 
-class BaseAPIRequest:
+class BaseAPIRequest(object):
     """The Base API Request"""
 
     def __init__(self, url, client, values):
@@ -61,7 +62,6 @@ class BaseAPIRequest:
     def sign(self):
         """Return encoded data and files
         """
-        #        timestamp=timestamp, format='json', v='2.0',
         data, files = {}, {}
         if not self.values:
             raise NotImplementedError('no values')
@@ -111,9 +111,21 @@ class BaseAPIRequest:
 
 class DefaultAPIRequest(BaseAPIRequest):
     """The Basic API Request"""
+    def __init__(self, url, client, values):
+        super(DefaultAPIRequest, self).__init__(url, client, values)
+        self._session = None
+
+    @property
+    def session(self):
+        if not self._session:
+            s = requests.Session()
+            s.mount('http://', HTTPAdapter(max_retries=5))
+            s.mount('https://', HTTPAdapter(max_retries=5))
+            self._session = s
+        return self._session
 
     def open(self, data, files):
-        r = requests.post(self.url, data, files=files, headers={'Accept-Encoding': 'gzip'})
+        r = self.session.post(self.url, data, files=files, headers={'Accept-Encoding': 'gzip'})
         try:
             return r.json()
         except ValueError:
