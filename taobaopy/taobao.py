@@ -23,6 +23,7 @@ __copyright__ = 'Copyright 2013 Fred Wang'
 import json
 import time
 import hmac
+import math
 import requests
 import logging
 from datetime import datetime
@@ -104,7 +105,7 @@ class BaseAPIRequest(object):
                     if try_id < retry_count - 1:
                         ts_sleep = 0.1 * math.pow(2, try_id)
                         time.sleep(ts_sleep)
-                        logging.warn("meet accesscontrol, sleep %.3lf seconds", ts_sleep)
+                        logging.warn("meet access-control, sleep %.3lf seconds", ts_sleep)
                     continue
             break
         ts_used = (time.time() - ts_start) * 1000
@@ -198,7 +199,7 @@ class TaoBaoAPIClient(object):
     """API client using synchronized invocation."""
 
     def __init__(self, app_key, app_secret, domain='gw.api.taobao.com', fetcher_class=DefaultAPIRequest,
-                 retry_sub_codes=None, retry_count=3, **kw):
+                 retry_sub_codes=None, retry_count=5, **kw):
         """Init API Client"""
         self.client_id = app_key
         self.client_secret = app_secret
