@@ -91,14 +91,22 @@ class BaseAPIRequest(object):
         ts_start = time.time()
         data, files = self.sign()
         ret = {}
-        for try_id in xrange(self.client.retry_count, 0, -1):
+        retry_count = self.client.retry_count
+        for try_id in xrange(retry_count):
             ret = self.open(data, files)
             for file in files.values():
                 file.seek(0)
-            if 'error_response' in ret and ret['error_response'].get('sub_code') in self.retry_sub_codes:
-                continue
-            else:
-                break
+            if 'error_response' in ret:
+                sub_code = ret['error_response'].get('sub_code')
+                if sub_code in self.retry_sub_codes:
+                    continue
+                elif sub_code == 'accesscontrol.limited-by-api-access-count':
+                    if try_id < retry_count - 1:
+                        ts_sleep = 0.1 * math.pow(2, try_id)
+                        time.sleep(ts_sleep)
+                        logging.warn("meet accesscontrol, sleep %.3lf seconds", ts_sleep)
+                    continue
+            break
         ts_used = (time.time() - ts_start) * 1000
         files2 = dict([(k, str(v)) for k, v in files.items()])
         data.update(**files2)
