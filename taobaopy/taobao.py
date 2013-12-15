@@ -42,7 +42,7 @@ RETRY_SUB_CODES = {
     'isp.item-update-service-error:GENERIC_FAILURE',
     'isp.item-update-service-error:IC_SYSTEM_NOT_READY_TRY_AGAIN_LATER',
     'ism.json-decode-error',
-    'ism.demo-error'
+    'ism.demo-error',
     'isp.top-remote-service-unavailable-tmall',
 }
 
