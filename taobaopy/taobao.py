@@ -16,7 +16,7 @@ from requests.adapters import HTTPAdapter
 
 __author__ = 'Fred Wang (taobao-pysdk@1e20.com)'
 __title__ = 'taobaopy'
-__version__ = '4.0.0'
+__version__ = '4.0.1'
 __license__ = 'BSD License'
 __copyright__ = 'Copyright 2013 Fred Wang'
 
