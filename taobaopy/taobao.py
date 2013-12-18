@@ -16,7 +16,7 @@ from requests.adapters import HTTPAdapter
 
 __author__ = 'Fred Wang (taobao-pysdk@1e20.com)'
 __title__ = 'taobaopy'
-__version__ = '3.9.0'
+__version__ = '4.0.0'
 __license__ = 'BSD License'
 __copyright__ = 'Copyright 2013 Fred Wang'
 
@@ -33,17 +33,18 @@ api_logger = logging.getLogger('taobao_api')
 api_error_logger = logging.getLogger('taobao_api_error')
 
 RETRY_SUB_CODES = {
-    'isp.top-remote-unknown-error',
     'isp.top-remote-connection-timeout',
-    'isp.remote-connection-error',
-    'mz.emptybody',
-    'isp.top-remote-service-unavailable',
     'isp.top-remote-connection-timeout-tmall',
+    'isp.top-remote-service-unavailable',
+    'isp.top-remote-service-unavailable-tmall',
+    'isp.top-remote-unknown-error',
+    'isp.top-remote-unknown-error-tmall',
+    'isp.remote-connection-error',
+    'isp.remote-connection-error-tmall',
     'isp.item-update-service-error:GENERIC_FAILURE',
     'isp.item-update-service-error:IC_SYSTEM_NOT_READY_TRY_AGAIN_LATER',
     'ism.json-decode-error',
-    'ism.demo-error'
-    'isp.top-remote-service-unavailable-tmall',
+    'ism.demo-error',
 }
 
 VALUE_TO_STR = {
