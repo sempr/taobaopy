@@ -5,7 +5,7 @@ __author__ = 'Sempr'
 
 setup(
     name='taobaopy',
-    version='4.0.1',
+    version='4.1.0',
     url='https://github.com/sempr/taobaopy',
     license='BSD',
     author='Fred Wang',
@@ -16,7 +16,7 @@ setup(
     include_package_data=True,
     zip_safe=False,
     platforms='any',
-    install_requires=['requests >= 2.1.0'],
+    install_requires=['requests >= 2.2.1'],
     classifiers=[
         'Development Status :: 5 - Production/Stable',
         'Intended Audience :: Developers',

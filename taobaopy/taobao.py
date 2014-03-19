@@ -16,7 +16,7 @@ from requests.adapters import HTTPAdapter
 
 __author__ = 'Fred Wang (taobao-pysdk@1e20.com)'
 __title__ = 'taobaopy'
-__version__ = '4.0.1'
+__version__ = '4.1.0'
 __license__ = 'BSD License'
 __copyright__ = 'Copyright 2013 Fred Wang'
 
@@ -29,8 +29,7 @@ import logging
 from datetime import datetime
 
 
-api_logger = logging.getLogger('taobao_api')
-api_error_logger = logging.getLogger('taobao_api_error')
+api_logger = logging.getLogger(__name__)
 
 RETRY_SUB_CODES = {
     'isp.top-remote-connection-timeout',
@@ -114,11 +113,12 @@ class BaseAPIRequest(object):
         data.update(**files2)
         log_data = '%.2fms [{>.<}] %s [{>.<}] %s [{>.<}] %s' % (
             ts_used, data.get('method'), json.dumps(data), json.dumps(ret))
-        api_logger.debug(log_data)
         if 'error_response' in ret:
+            api_logger.warning(log_data)
             r = ret['error_response']
-            api_error_logger.warning(log_data)
             raise TaoBaoAPIError(data, **r)
+        else:
+            api_logger.debug(log_data)
 
         return ret
 
