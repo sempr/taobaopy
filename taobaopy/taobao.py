@@ -16,7 +16,7 @@ from requests.adapters import HTTPAdapter
 
 __author__ = 'Fred Wang (taobao-pysdk@1e20.com)'
 __title__ = 'taobaopy'
-__version__ = '4.1.0'
+__version__ = '4.1.1'
 __license__ = 'BSD License'
 __copyright__ = 'Copyright 2013 Fred Wang'
 
@@ -36,6 +36,8 @@ RETRY_SUB_CODES = {
     'isp.top-remote-connection-timeout-tmall',
     'isp.top-remote-service-unavailable',
     'isp.top-remote-service-unavailable-tmall',
+    'isp.top-remote-connection-control-error',
+    'isp.top-remote-connection-control-error-tmall',
     'isp.top-remote-unknown-error',
     'isp.top-remote-unknown-error-tmall',
     'isp.remote-connection-error',
