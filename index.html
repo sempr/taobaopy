@@ -31,32 +31,90 @@
     <!-- MAIN CONTENT -->
     <div id="main_content_wrap" class="outer">
       <section id="main_content" class="inner">
-        <h3>Welcome to GitHub Pages.</h3>
+        <h1>
+<a name="%E7%AE%80%E4%BB%8B" class="anchor" href="#%E7%AE%80%E4%BB%8B"><span class="octicon octicon-link"></span></a>简介</h1>
 
-<p>This automatic page generator is the easiest way to create beautiful pages for all of your projects. Author your page content here using GitHub Flavored Markdown, select a template crafted by a designer, and publish. After your page is generated, you can check out the new branch:</p>
+<p>这是淘宝API的一个简单灵活的Python客户端，由美折团队开发、维护</p>
 
-<pre><code>$ cd your_repo_root/repo_name
-$ git fetch origin
-$ git checkout gh-pages
+<p>目前已在两个产品上使用(<a href="http://fuwu.taobao.com/serv/detail.htm?service_id=11496&amp;tracelog=pythonsdk">美折</a>,<a href="http://fuwu.taobao.com/serv/detail.htm?service_id=15665&amp;tracelog=pythonsdk">美印</a>)，日调用量过百万。</p>
+
+<p>有任何问题欢迎<a href="https://bitbucket.org/sempr/taobaopy/issues/new">提交issue</a>，或者联系邮箱：<a href="mailto:hi@aimeizhe.com">hi@aimeizhe.com</a></p>
+
+<h2>
+<a name="%E5%A6%82%E4%BD%95%E4%BD%BF%E7%94%A8" class="anchor" href="#%E5%A6%82%E4%BD%95%E4%BD%BF%E7%94%A8"><span class="octicon octicon-link"></span></a>如何使用</h2>
+
+<pre><code># 引入该Client
+from taobao import APIClient
+
+client = APIClient('Your API Key','Your API Secret')
+client.items_get(nicks='kamozi', fields='num_iid,title,price', page_no=1, page_size=2)
 </code></pre>
 
-<p>If you're using the GitHub for Mac, simply sync your repository and you'll see the new branch.</p>
+<p>对于淘宝的某个API,比如 taobao.AA.BB.CC.DD 调用的函数名为 AA_BB_CC_DD，即将前面的taobao.去掉 后面的.全部换成 '_' </p>
 
-<h3>Designer Templates</h3>
+<p>如果淘宝的某个API的参数中有'.'，需要把'.'换成两个下划线__,比如</p>
 
-<p>We've crafted some handsome templates for you to use. Go ahead and continue to layouts to browse through them. You can easily go back to edit your page before publishing. After publishing your page, you can revisit the page generator and switch to another theme. Your Page content will be preserved if it remained markdown format.</p>
+<pre><code>client.item_update(location__state='杭州',num_iid='XXXXXX',session=xxxx)
+</code></pre>
 
-<h3>Rather Drive Stick?</h3>
+<p>对于get请求 client.get.AA_BB_CC_DD中 get可以省略 即 client.AA_BB_CC_DD</p>
 
-<p>If you prefer to not use the automatic generator, push a branch named <code>gh-pages</code> to your repository to create a page manually. In addition to supporting regular HTML content, GitHub Pages support Jekyll, a simple, blog aware static site generator written by our own Tom Preston-Werner. Jekyll makes it easy to create site-wide headers and footers without having to copy them across every page. It also offers intelligent blog support and other advanced templating features.</p>
+<p>对于post请求 请使用 client.post.AA_BB_CC_DD</p>
 
-<h3>Authors and Contributors</h3>
+<p>如果要上传文件，请使用 client.upload.AA_BB_CC_DD(image=open("Your File Path"))</p>
 
-<p>You can <a href="https://github.com/blog/821" class="user-mention">@mention</a> a GitHub username to generate a link to their profile. The resulting <code>&lt;a&gt;</code> element will link to the contributor's GitHub Profile. For example: In 2007, Chris Wanstrath (<a href="https://github.com/defunkt" class="user-mention">@defunkt</a>), PJ Hyett (<a href="https://github.com/pjhyett" class="user-mention">@pjhyett</a>), and Tom Preston-Werner (<a href="https://github.com/mojombo" class="user-mention">@mojombo</a>) founded GitHub.</p>
+<h2>
+<a name="%E4%BE%8B%E5%AD%90" class="anchor" href="#%E4%BE%8B%E5%AD%90"><span class="octicon octicon-link"></span></a>例子</h2>
 
-<h3>Support or Contact</h3>
+<h4>
+<a name="%E4%BD%BF%E7%94%A8post" class="anchor" href="#%E4%BD%BF%E7%94%A8post"><span class="octicon octicon-link"></span></a>使用POST</h4>
 
-<p>Having trouble with Pages? Check out the documentation at <a href="http://help.github.com/pages">http://help.github.com/pages</a> or contact <a href="mailto:support@github.com">support@github.com</a> and we’ll help you sort it out.</p>
+<pre><code>client = APIClient('Your API Key','Your API Secret')
+client.post.items_get(nicks='kamozi', fields='num_iid,title,price', page_no=1, page_size=2)
+</code></pre>
+
+<h4>
+<a name="%E8%AE%BF%E9%97%AE%E9%9C%80%E6%8E%88%E6%9D%83%E5%86%85%E5%AE%B9" class="anchor" href="#%E8%AE%BF%E9%97%AE%E9%9C%80%E6%8E%88%E6%9D%83%E5%86%85%E5%AE%B9"><span class="octicon octicon-link"></span></a>访问需授权内容</h4>
+
+<pre><code>client = APIClient('Your API Key','Your API Secret')
+client.post.item_update(num_iid=NUM_IID,title="这是一个新的商品信息服务",session='Your Session Key')
+</code></pre>
+
+<h5>
+<a name="%E6%88%96%E8%80%85" class="anchor" href="#%E6%88%96%E8%80%85"><span class="octicon octicon-link"></span></a>或者</h5>
+
+<pre><code>client = APIClient('Your API Key','Your API Secret')
+client.set_token('Your Session Key')
+client.post.item_update(num_iid=NUM_IID,title="这是一个新的商品信息服务")
+</code></pre>
+
+<h4>
+<a name="%E4%B8%8A%E4%BC%A0%E5%9B%BE%E7%89%87" class="anchor" href="#%E4%B8%8A%E4%BC%A0%E5%9B%BE%E7%89%87"><span class="octicon octicon-link"></span></a>上传图片</h4>
+
+<pre><code>client = APIClient('Your API Key','Your API Secret')
+client.set_token('Your Session Key')
+client.upload.item_img_upload(num_iid=NUM_IID, is_major='true', image=open("logo.png","rb"))
+</code></pre>
+
+<h4>
+<a name="%E8%87%AA%E5%AE%9A%E4%B9%89%E5%AE%A2%E6%88%B7%E7%AB%AF" class="anchor" href="#%E8%87%AA%E5%AE%9A%E4%B9%89%E5%AE%A2%E6%88%B7%E7%AB%AF"><span class="octicon octicon-link"></span></a>自定义客户端</h4>
+
+<pre><code>def _debug_fetcher(request):
+    opener = urllib2.build_opener(urllib2.HTTPHandler(debuglevel=1))
+    return opener.open(request,timeout=5).read()
+
+client = APIClient('Your API Key','Your API Secret')
+client.set_fetcher(_debug_fetcher)
+client.set_access_token(token)
+client.upload.item_img_upload(num_iid=NUM_IID,is_major='true',image=open("logo.png","rb"))
+</code></pre>
+
+<h4>
+<a name="%E8%AE%BF%E9%97%AE%E6%B2%99%E7%AE%B1" class="anchor" href="#%E8%AE%BF%E9%97%AE%E6%B2%99%E7%AE%B1"><span class="octicon octicon-link"></span></a>访问沙箱</h4>
+
+<pre><code>client = APIClient('Your API Key','Your API Secret',domain='container.api.tbsandbox.com')
+client.items_get(nicks='test',fields='num_iid,title,price',page_no=1,page_size=2)
+</code></pre>
       </section>
     </div>
 
