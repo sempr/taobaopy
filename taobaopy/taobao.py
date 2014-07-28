@@ -16,9 +16,9 @@ from requests.adapters import HTTPAdapter
 
 __author__ = 'Fred Wang (taobao-pysdk@1e20.com)'
 __title__ = 'taobaopy'
-__version__ = '4.1.1'
+__version__ = '4.2.0'
 __license__ = 'BSD License'
-__copyright__ = 'Copyright 2013 Fred Wang'
+__copyright__ = 'Copyright 2013-2014 Fred Wang'
 
 import json
 import time
@@ -111,14 +111,18 @@ class BaseAPIRequest(object):
                     continue
             break
         ts_used = (time.time() - ts_start) * 1000
+        method = data.get('method', '')
         files2 = dict([(k, str(v)) for k, v in files.items()])
         data.update(**files2)
         log_data = '%.2fms [{>.<}] %s [{>.<}] %s [{>.<}] %s' % (
-            ts_used, data.get('method'), json.dumps(data), json.dumps(ret))
+            ts_used, method, json.dumps(data), json.dumps(ret))
+
         if 'error_response' in ret:
             api_logger.warning(log_data)
             r = ret['error_response']
             raise TaoBaoAPIError(data, **r)
+        elif method.startswith("taobao.ump") or method.startswith("taobao.promotion"):
+            api_logger.info(log_data)
         else:
             api_logger.debug(log_data)
 
