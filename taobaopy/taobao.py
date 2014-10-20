@@ -13,10 +13,11 @@ usage:
    >>> print r
 """
 from requests.adapters import HTTPAdapter
+from requests.exceptions import ConnectionError
 
 __author__ = 'Fred Wang (taobao-pysdk@1e20.com)'
 __title__ = 'taobaopy'
-__version__ = '4.2.0'
+__version__ = '4.2.1'
 __license__ = 'BSD License'
 __copyright__ = 'Copyright 2013-2014 Fred Wang'
 
@@ -148,7 +149,15 @@ class DefaultAPIRequest(BaseAPIRequest):
         return self._session
 
     def open(self, data, files):
-        r = self.session.post(self.url, data, files=files, headers={'Accept-Encoding': 'gzip'})
+        for t in xrange(3, -1, -1):
+            r = None
+            try:
+                r = self.session.post(self.url, data, files=files, headers={'Accept-Encoding': 'gzip'})
+                break
+            except ConnectionError as e:
+                if t == 0:
+                    raise
+
         try:
             return r.json()
         except ValueError:
