@@ -17,7 +17,7 @@ from requests.exceptions import ConnectionError
 
 __author__ = 'Fred Wang (taobao-pysdk@1e20.com)'
 __title__ = 'taobaopy'
-__version__ = '4.2.1'
+__version__ = '4.2.2'
 __license__ = 'BSD License'
 __copyright__ = 'Copyright 2013-2014 Fred Wang'
 

@@ -5,7 +5,7 @@ __author__ = 'Sempr'
 
 setup(
     name='taobaopy',
-    version='4.2.1',
+    version='4.2.2',
     url='https://github.com/sempr/taobaopy',
     license='BSD',
     author='Fred Wang',
