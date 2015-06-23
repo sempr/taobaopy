@@ -31,6 +31,7 @@ from datetime import datetime
 
 
 api_logger = logging.getLogger(__name__)
+api_logger.addHandler(logging.NullHandler())
 
 RETRY_SUB_CODES = {
     'isp.top-remote-connection-timeout',
