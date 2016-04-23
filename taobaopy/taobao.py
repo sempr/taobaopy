@@ -17,7 +17,7 @@ from requests.exceptions import ConnectionError
 
 __author__ = 'Fred Wang (taobao-pysdk@1e20.com)'
 __title__ = 'taobaopy'
-__version__ = '4.2.2'
+__version__ = '4.3.0'
 __license__ = 'BSD License'
 __copyright__ = 'Copyright 2013-2014 Fred Wang'
 
@@ -174,22 +174,23 @@ class DefaultAPIRequest(BaseAPIRequest):
 class TaoBaoAPIError(StandardError):
     """raise APIError if got failed json message."""
 
-    def __init__(self, request, code='', msg='', sub_code='', sub_msg='', **kwargs):
+    def __init__(self, request, code='', msg='', sub_code='', sub_msg='', request_id='', **kwargs):
         """TaoBao SDK Error, Raised From TaoBao"""
         self.request = request
         self.code = code
         self.msg = msg
         self.sub_code = sub_code
         self.sub_msg = sub_msg
+        self.request_id = request_id
         StandardError.__init__(self, self.__str__())
 
     def __str__(self):
         """Build String For All the Request and Response"""
-        return "%s|%s|%s|%s|%s" % (str(self.code), self.msg, str(self.sub_code), self.sub_msg, self.request)
+        return "%s|%s|%s|%s|%s|%s" % (str(self.code), self.msg, str(self.sub_code), self.sub_msg, self.request_id, self.request)
 
     def str2(self):
         """Build String For the Request only"""
-        return "%s|%s|%s|%s" % (str(self.code), self.msg, str(self.sub_code), self.sub_msg)
+        return "%s|%s|%s|%s|%s" % (str(self.code), self.msg, str(self.sub_code), self.sub_msg, self.request_id)
 
 
 class HttpObject(object):
