@@ -13,12 +13,13 @@ usage:
    >>> print r
 """
 from requests.adapters import HTTPAdapter
+from requests.exceptions import ConnectionError
 
 __author__ = 'Fred Wang (taobao-pysdk@1e20.com)'
 __title__ = 'taobaopy'
-__version__ = '4.1.1'
+__version__ = '4.3.0'
 __license__ = 'BSD License'
-__copyright__ = 'Copyright 2013 Fred Wang'
+__copyright__ = 'Copyright 2013-2014 Fred Wang'
 
 import json
 import time
@@ -30,6 +31,7 @@ from datetime import datetime
 
 
 api_logger = logging.getLogger(__name__)
+api_logger.addHandler(logging.NullHandler())
 
 RETRY_SUB_CODES = {
     'isp.top-remote-connection-timeout',
@@ -111,14 +113,18 @@ class BaseAPIRequest(object):
                     continue
             break
         ts_used = (time.time() - ts_start) * 1000
+        method = data.get('method', '')
         files2 = dict([(k, str(v)) for k, v in files.items()])
         data.update(**files2)
         log_data = '%.2fms [{>.<}] %s [{>.<}] %s [{>.<}] %s' % (
-            ts_used, data.get('method'), json.dumps(data), json.dumps(ret))
+            ts_used, method, json.dumps(data), json.dumps(ret))
+
         if 'error_response' in ret:
             api_logger.warning(log_data)
             r = ret['error_response']
             raise TaoBaoAPIError(data, **r)
+        elif method.startswith("taobao.ump") or method.startswith("taobao.promotion"):
+            api_logger.info(log_data)
         else:
             api_logger.debug(log_data)
 
@@ -144,7 +150,15 @@ class DefaultAPIRequest(BaseAPIRequest):
         return self._session
 
     def open(self, data, files):
-        r = self.session.post(self.url, data, files=files, headers={'Accept-Encoding': 'gzip'})
+        for t in xrange(3, -1, -1):
+            r = None
+            try:
+                r = self.session.post(self.url, data, files=files, headers={'Accept-Encoding': 'gzip'})
+                break
+            except ConnectionError as e:
+                if t == 0:
+                    raise
+
         try:
             return r.json()
         except ValueError:
@@ -160,22 +174,23 @@ class DefaultAPIRequest(BaseAPIRequest):
 class TaoBaoAPIError(StandardError):
     """raise APIError if got failed json message."""
 
-    def __init__(self, request, code='', msg='', sub_code='', sub_msg='', **kwargs):
+    def __init__(self, request, code='', msg='', sub_code='', sub_msg='', request_id='', **kwargs):
         """TaoBao SDK Error, Raised From TaoBao"""
         self.request = request
         self.code = code
         self.msg = msg
         self.sub_code = sub_code
         self.sub_msg = sub_msg
+        self.request_id = request_id
         StandardError.__init__(self, self.__str__())
 
     def __str__(self):
         """Build String For All the Request and Response"""
-        return "%s|%s|%s|%s|%s" % (str(self.code), self.msg, str(self.sub_code), self.sub_msg, self.request)
+        return "%s|%s|%s|%s|%s|%s" % (str(self.code), self.msg, str(self.sub_code), self.sub_msg, self.request_id, self.request)
 
     def str2(self):
         """Build String For the Request only"""
-        return "%s|%s|%s|%s" % (str(self.code), self.msg, str(self.sub_code), self.sub_msg)
+        return "%s|%s|%s|%s|%s" % (str(self.code), self.msg, str(self.sub_code), self.sub_msg, self.request_id)
 
 
 class HttpObject(object):
