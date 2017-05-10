@@ -17,7 +17,7 @@ from requests.exceptions import ConnectionError
 
 __author__ = 'Fred Wang (taobao-pysdk@1e20.com)'
 __title__ = 'taobaopy'
-__version__ = '4.3.0'
+__version__ = '4.3.1'
 __license__ = 'BSD License'
 __copyright__ = 'Copyright 2013-2014 Fred Wang'
 
@@ -98,9 +98,9 @@ class BaseAPIRequest(object):
         ret = {}
         retry_count = self.client.retry_count
         for try_id in xrange(retry_count):
-            ret = self.open(data, files)
             for file in files.values():
                 file.seek(0)
+            ret = self.open(data, files)
             if 'error_response' in ret:
                 sub_code = ret['error_response'].get('sub_code')
                 if sub_code in self.retry_sub_codes:
