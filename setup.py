@@ -17,7 +17,7 @@ setup(
     zip_safe=False,
     platforms='any',
     install_requires=['requests>=2.18.4', 'six>=1.11.0,<2.0'],
-    classifiers=(
+    classifiers=[
         'Development Status :: 5 - Production/Stable',
         'Intended Audience :: Developers',
         'Natural Language :: English',
@@ -25,6 +25,6 @@ setup(
         'Programming Language :: Python :: 2',
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.6',
-    ),
+        'Programming Language :: Python :: 3.6'
+    ]
 )
