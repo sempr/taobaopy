@@ -16,12 +16,15 @@ setup(
     include_package_data=True,
     zip_safe=False,
     platforms='any',
-    install_requires=['requests>=2.18.4', 'six==1.11.0', 'urllib3==1.22'],
-    classifiers=[
+    install_requires=['requests>=2.18.4', 'six>=1.11.0,<2.0'],
+    classifiers=(
         'Development Status :: 5 - Production/Stable',
         'Intended Audience :: Developers',
-        'License :: OSI Approved :: BSD License',
+        'Natural Language :: English',
         'Programming Language :: Python',
-        'Topic :: Software Development :: Libraries :: Python Modules'
-    ],
+        'Programming Language :: Python :: 2',
+        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.6',
+    ),
 )
