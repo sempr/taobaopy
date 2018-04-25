@@ -1,27 +1,26 @@
-import sys
-from taobaopy.taobao import *
-import config
-import logging.config
+# coding:utf8
+import os
+import unittest
+
+from taobaopy.taobao import TaoBaoAPIClient
 
 
-def test():
-    key = config.key
-    sec = config.sec
-    token = config.token
-    if key[:3] == 'put':
-        print "Please put your appkey,appsec and test key in config.py"
-        sys.exit(1)
-    client = APIClient(key, sec)
-    NUM_IID = config.num_iid
-    print client.item_get(num_iid=NUM_IID, fields='num_iid,title')
-    print client.item_img_upload(num_iid=NUM_IID, is_major='true', image=open("logo.png", "rb"), session=token)
-    try:
-        print client.item_img_upload(num_iid=NUM_IID, is_major='true', image=open("logo.png", "rb"))
-    except APIError, e:
-        print e.__str__()
+class TestTaobaoSDK(unittest.TestCase):
+    def setUp(self):
+        key = os.getenv("TAOBAO_APP_KEY")
+        sec = os.getenv("TAOBAO_APP_SEC")
+        self.assertNotEqual(key, None)
+        self.assertNotEqual(sec, None)
+        self.client = TaoBaoAPIClient(key, sec)
+
+    def test_time_get(self):
+        r = self.client.time_get()
+        self.assertEqual(list(r.keys()), ["time_get_response"])
+
+    def test_tbk_item_get(self):
+        r = self.client.tbk_item_get(q="女装", fields="num_iid,title,pict_url,small_images,zk_final_price")
+        self.assertEqual(list(r.keys()), ["tbk_item_get_response"])
 
 
 if __name__ == '__main__':
-    logging.config.fileConfig('logging.ini')
-    test()
- 
+    unittest.main()
