@@ -1,4 +1,11 @@
 # coding:utf8
+
+
+import sys 
+if sys.version_info < (3, 0):
+    reload(sys) 
+    sys.setdefaultencoding("utf-8")
+
 import os
 import unittest
 
@@ -18,7 +25,7 @@ class TestTaobaoSDK(unittest.TestCase):
         self.assertEqual(list(r.keys()), ["time_get_response"])
 
     def test_tbk_item_get(self):
-        r = self.client.tbk_item_get(q="女装", fields="num_iid,title,pict_url,small_images,zk_final_price", page_size=2)
+        r = self.client.tbk_item_get(q="abc", fields="num_iid,title,pict_url,small_images,zk_final_price", page_size=2)
         self.assertEqual(list(r.keys()), ["tbk_item_get_response"])
 
     def test_error_response(self):
