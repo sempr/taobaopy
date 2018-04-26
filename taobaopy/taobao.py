@@ -31,8 +31,8 @@ from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 import six
 
-api_logger = logging.getLogger(__name__)
-api_logger.addHandler(logging.NullHandler())
+logger = logging.getLogger(__name__)
+logger.addHandler(logging.NullHandler())
 
 RETRY_SUB_CODES = {
     'isp.top-remote-connection-timeout',
@@ -130,14 +130,36 @@ class BaseAPIRequest(object):
         return data, files
 
     def run(self):
-        ts_start = time.time()
         data, files = self.sign()
         ret = {}
         retry_count = self.client.retry_count
+
+        # prepared data for logging
+        method = data.get('method', '')
+        input_args = json.dumps(dict(data, **dict([(k, str(v)) for k, v in six.iteritems(files)])), ensure_ascii=False)
+        ts_used = 0.0
+
+        def do_log(r):
+            output_args = json.dumps(r, ensure_ascii=False)
+            log_data = '[TOP_API_CALL] {ts_used:2f}ms |xxx| {method} |xxx| {input_args} |xxx| {output_args}'.format(
+                ts_used=ts_used, method=method, input_args=input_args, output_args=output_args)
+
+            if 'error_response' in r:
+                logger.warning(log_data)
+            elif method.startswith("taobao.ump") or method.startswith("taobao.promotion"):
+                logger.info(log_data)
+            else:
+                logger.debug(log_data)
+
         for try_id in range(retry_count):
-            ret = self.open(data, files)
             for f in list(files.values()):
                 f.seek(0)
+
+            ts_start = time.time()
+            ret = self.open(data, files)
+            ts_used = (time.time() - ts_start) * 1000
+            do_log(ret)
+
             if 'error_response' in ret:
                 sub_code = ret['error_response'].get('sub_code')
                 if sub_code in self.retry_sub_codes:
@@ -145,25 +167,14 @@ class BaseAPIRequest(object):
                 elif sub_code == 'accesscontrol.limited-by-api-access-count':
                     if try_id < retry_count - 1:
                         ts_sleep = 0.1 * math.pow(2, try_id)
+                        logger.warning("meet access-control, sleep %.3lf seconds", ts_sleep)
                         time.sleep(ts_sleep)
-                        logging.warning("meet access-control, sleep %.3lf seconds", ts_sleep)
                     continue
             break
-        ts_used = (time.time() - ts_start) * 1000
-        method = data.get('method', '')
-        files2 = dict([(k, str(v)) for k, v in six.iteritems(files)])
-        data.update(**files2)
-        log_data = '%.2fms [{>.<}] %s [{>.<}] %s [{>.<}] %s' % (
-            ts_used, method, json.dumps(data), json.dumps(ret))
 
         if 'error_response' in ret:
-            api_logger.warning(log_data)
             r = ret['error_response']
             raise TaoBaoAPIError(data, **r)
-        elif method.startswith("taobao.ump") or method.startswith("taobao.promotion"):
-            api_logger.info(log_data)
-        else:
-            api_logger.debug(log_data)
 
         return ret
 
