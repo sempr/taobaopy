@@ -168,7 +168,7 @@ class BaseAPIRequest(object):
         return ret
 
     def open(self, data, files):
-        raise NotImplemented
+        raise NotImplementedError("open function should be implemented")
 
 
 class DefaultAPIRequest(BaseAPIRequest):
