@@ -16,8 +16,8 @@ class TestTaobaoSDK(unittest.TestCase):
     def setUp(self):
         key = os.getenv("TAOBAO_APP_KEY")
         sec = os.getenv("TAOBAO_APP_SEC")
-        self.assertNotEqual(key, None)
-        self.assertNotEqual(sec, None)
+        self.assertNotEqual(key, None, "Please set TAOBAO_APP_KEY in env")
+        self.assertNotEqual(sec, None, "Please set TAOBAO_APP_SEC in env")
         self.client = TaoBaoAPIClient(key, sec)
 
     def test_time_get(self):
@@ -25,7 +25,7 @@ class TestTaobaoSDK(unittest.TestCase):
         self.assertEqual(list(r.keys()), ["time_get_response"])
 
     def test_tbk_item_get(self):
-        r = self.client.tbk_item_get(q="abc", fields="num_iid,title,pict_url,small_images,zk_final_price", page_size=2)
+        r = self.client.tbk_item_get(q="abc", fields="num_iid,title,pict_url,zk_final_price", page_size=2)
         self.assertEqual(list(r.keys()), ["tbk_item_get_response"])
 
     def test_error_response(self):
