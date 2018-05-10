@@ -234,19 +234,19 @@ class TaoBaoAPIError(Exception):
         Exception.__init__(self, self.__str__())
 
     def __repr__(self):
-        return "{code}|{msg}|{sub_code}|{request_id}|{sub_msg}{request}".format(
+        return "{code}|{msg}|{sub_code}|{sub_msg}|{request_id}|{request}".format(
             code=self.code, msg=self.msg, sub_code=self.sub_code, sub_msg=self.sub_msg,
             request_id=self.request_id, request=self.request)
 
     def __str__(self):
         """Build String For All the Request and Response"""
-        return "{code}|{msg}|{sub_code}|{request_id}|{sub_msg}".format(
+        return "{code}|{msg}|{sub_code}|{sub_msg}|{request_id}".format(
             code=self.code, msg=self.msg, sub_code=self.sub_code, sub_msg=self.sub_msg,
             request_id=self.request_id, request=self.request)
 
     def str2(self):
         """Build String For the Request only"""
-        return "{code}|{msg}|{sub_code}|{request_id}|{sub_msg}".format(
+        return "{code}|{msg}|{sub_code}|{sub_msg}|{request_id}".format(
             code=self.code, msg=self.msg, sub_code=self.sub_code, sub_msg=self.sub_msg,
             request_id=self.request_id, request=self.request)
 
