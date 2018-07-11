@@ -1,3 +1,6 @@
+
+![TavisCI Status](https://travis-ci.org/sempr/taobaopy.svg?branch=master)
+
 #简介
 
 这是淘宝API的一个简单灵活的Python客户端，由美折团队开发、维护
@@ -9,15 +12,15 @@
 ##如何使用
 
 	# 引入该Client
-	from taobao import APIClient
+	from taobao import TaoBaoAPIClient
 
-	client = APIClient('Your API Key','Your API Secret')
+	client = TaoBaoAPIClient('Your API Key','Your API Secret')
 	client.items_get(nicks='kamozi', fields='num_iid,title,price', page_no=1, page_size=2)
 
-对于淘宝的某个API,比如 taobao.AA.BB.CC.DD 调用的函数名为 AA_BB_CC_DD，即将前面的taobao.去掉 后面的.全部换成 '_' 
+对于淘宝的某个API,比如 taobao.AA.BB.CC.DD 调用的函数名为 AA_BB_CC_DD，即将前面的taobao.去掉 后面的.全部换成 '_'
 
 如果淘宝的某个API的参数中有'.'，需要把'.'换成两个下划线__,比如
-    
+
     client.item_update(location__state='杭州',num_iid='XXXXXX',session=xxxx)
 
 对于get请求 client.get.AA_BB_CC_DD中 get可以省略 即 client.AA_BB_CC_DD
@@ -57,7 +60,7 @@
 	def _debug_fetcher(request):
 	    opener = urllib2.build_opener(urllib2.HTTPHandler(debuglevel=1))
 	    return opener.open(request,timeout=5).read()
-	
+
 	client = APIClient('Your API Key','Your API Secret')
 	client.set_fetcher(_debug_fetcher)
 	client.set_access_token(token)
