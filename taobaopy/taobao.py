@@ -287,7 +287,7 @@ class TaoBaoAPIClient(object):
         self.get = HttpObject(self)
         self.post = HttpObject(self)
         self.upload = HttpObject(self)
-        self.retry_sub_codes = retry_sub_codes if retry_sub_codes else RETRY_SUB_CODES
+        self.retry_sub_codes = RETRY_SUB_CODES | (retry_sub_codes or set())
         self.retry_count = retry_count
         self.kw = kw
 
