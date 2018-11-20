@@ -49,6 +49,7 @@ RETRY_SUB_CODES = {
     'isp.item-update-service-error:IC_SYSTEM_NOT_READY_TRY_AGAIN_LATER',
     'ism.json-decode-error',
     'ism.demo-error',
+    'isp.service-error',
 }
 
 
