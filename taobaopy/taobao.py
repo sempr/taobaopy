@@ -15,7 +15,6 @@ usage:
 
 __author__ = 'Fred Wang (taobao-pysdk@1e20.com)'
 __title__ = 'taobaopy'
-__version__ = '5.0.2'
 __license__ = 'BSD License'
 __copyright__ = 'Copyright 2013-2018 Fred Wang'
 
