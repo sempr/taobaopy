@@ -1,11 +1,12 @@
 from setuptools import setup
+from taobaopy.version import VERSION
 
 __author__ = 'Sempr'
 
 
 setup(
     name='taobaopy',
-    version='5.0.2',
+    version=VERSION,
     url='https://github.com/sempr/taobaopy',
     license='BSD',
     author='Sempr Wang',
