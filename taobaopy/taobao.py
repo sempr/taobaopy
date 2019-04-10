@@ -274,12 +274,16 @@ class HttpObject(object):
 class TaoBaoAPIClient(object):
     """API client using synchronized invocation."""
 
-    def __init__(self, app_key, app_secret, domain='gw.api.taobao.com', fetcher_class=DefaultAPIRequest,
+    def __init__(self, app_key, app_secret, domain='https://eco.taobao.com', fetcher_class=DefaultAPIRequest,
                  retry_sub_codes=None, retry_count=5, **kw):
         """Init API Client"""
         self.client_id = app_key
         self.client_secret = app_secret
-        self.gw_url = 'http://%s/router/rest' % (domain,)
+        # support http and https prefix, do not add suffix slash(/)
+        if domain.startswith("http://") or domain.startswith("https://"):
+            self.gw_url = '%s/router/rest' % (domain,)
+        else:
+            self.gw_url = 'http://%s/router/rest' % (domain,)
         self.access_token = None
         self.expires = 0.0
         self.fetcher_class = fetcher_class
