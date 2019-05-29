@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
 """
 TaoBao Python SDK
 ~~~~~~~~~~~~~~~~~~~~~
@@ -30,8 +29,8 @@ from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 import six
 
-logger = logging.getLogger(__name__)
-logger.addHandler(logging.NullHandler())
+TB_LOG = logging.getLogger(__name__)
+TB_LOG.addHandler(logging.NullHandler())
 
 RETRY_SUB_CODES = {
     'isp.top-remote-connection-timeout',
@@ -53,15 +52,23 @@ RETRY_SUB_CODES = {
 
 
 def ensure_binary(value):
+    """用于py2 py3兼容，确保是已编码格式"""
     if isinstance(value, six.text_type):
         return value.encode(encoding="utf-8")
     return value
 
 
 def ensure_text(value):
+    """用于py2 py3兼容，确保是未编码格式"""
     if isinstance(value, six.binary_type):
         return str(value)
     return value
+
+
+def seek_files(files):
+    """将所有的文件指针指回到开始"""
+    for file_ in files:
+        file_.seek(0)
 
 
 def requests_retry_session(
@@ -70,6 +77,7 @@ def requests_retry_session(
         status_forcelist=(500, 502, 504),
         session=None,
 ):
+    """生成配置过的重试机制的request.Session"""
     session = session or requests.Session()
     retry = Retry(
         total=retries,
@@ -85,13 +93,14 @@ def requests_retry_session(
     return session
 
 
-def default_value_to_str(x):
-    return str(x)
+def default_value_to_str(val):
+    """强制转换成string"""
+    return str(val)
 
 
 VALUE_TO_STR = {
     type(datetime(year=2018, month=1, day=1)): lambda v: v.strftime('%Y-%m-%d %H:%M:%S'),
-    type('a'): lambda v: ensure_text(v),
+    type('a'): ensure_text,
     type(0.1): lambda v: "%.2f" % v,
     type(True): lambda v: str(v).lower(),
 }
@@ -116,12 +125,12 @@ class BaseAPIRequest(object):
             raise NotImplementedError('no values')
         args = {'app_key': self.key, 'sign_method': 'hmac', 'format': 'json', 'v': '2.0', 'timestamp': datetime.now()}
 
-        for k, v in list(dict(self.values, **args).items()):
-            kk = k.replace('__', '.')
-            if hasattr(v, 'read'):
-                files[kk] = v
-            elif v is not None:
-                data[kk] = VALUE_TO_STR.get(type(v), default_value_to_str)(v)
+        for key, val in list(dict(self.values, **args).items()):
+            new_key = key.replace('__', '.')
+            if hasattr(val, 'read'):
+                files[new_key] = val
+            elif val is not None:
+                data[new_key] = VALUE_TO_STR.get(type(val), default_value_to_str)(val)
 
         args_str = "".join(["{}{}".format(k, data[k]) for k in sorted(data.keys())])
         sign = hmac.new(ensure_binary(self.sec), ensure_binary(args_str), digestmod=hashlib.md5)
@@ -130,31 +139,31 @@ class BaseAPIRequest(object):
         return data, files
 
     def run(self):
+        """执行http操作调用API"""
         data, files = self.sign()
         ret = {}
-        retry_count = self.client.retry_count
 
         # prepared data for logging
         method = data.get('method', '')
         input_args = json.dumps(dict(data, **dict([(k, str(v)) for k, v in six.iteritems(files)])), ensure_ascii=False)
-        ts_used = 0.0
 
-        def do_log(r):
-            output_args = json.dumps(r, ensure_ascii=False)
+        def do_log(request):
+            """一次普通的不带重试的请求"""
+            output_args = json.dumps(request, ensure_ascii=False)
             log_data = '[TOP_API_CALL] {ts_used:2f}ms |xxx| {method} |xxx| {input_args} |xxx| {output_args}'.format(
                 ts_used=ts_used, method=method, input_args=input_args, output_args=output_args)
 
-            if 'error_response' in r:
-                logger.warning(log_data)
+            if 'error_response' in request:
+                TB_LOG.warning(log_data)
             elif method.startswith("taobao.ump") or method.startswith("taobao.promotion"):
-                logger.info(log_data)
+                TB_LOG.info(log_data)
             else:
-                logger.debug(log_data)
+                TB_LOG.debug(log_data)
 
-        for try_id in range(retry_count):
-            for f in list(files.values()):
-                f.seek(0)
+        for try_id in range(self.client.retry_count):
+            seek_files(list(files.values()))
 
+            ts_used = 0.0
             ts_start = time.time()
             ret = self.open(data, files)
             ts_used = (time.time() - ts_start) * 1000
@@ -165,20 +174,21 @@ class BaseAPIRequest(object):
                 if sub_code in self.retry_sub_codes:
                     continue
                 elif sub_code == 'accesscontrol.limited-by-api-access-count':
-                    if try_id < retry_count - 1:
+                    if try_id < self.client.retry_count - 1:
                         ts_sleep = 0.1 * math.pow(2, try_id)
-                        logger.warning("meet access-control, sleep %.3lf seconds", ts_sleep)
+                        TB_LOG.warning("meet access-control, sleep %.3lf seconds", ts_sleep)
                         time.sleep(ts_sleep)
                     continue
             break
 
         if 'error_response' in ret:
-            r = ret['error_response']
-            raise TaoBaoAPIError(data, **r)
+            error_resp = ret['error_response']
+            raise TaoBaoAPIError(data, **error_resp)
 
         return ret
 
     def open(self, data, files):
+        """需要被继承的class实现的函数，可以自定义http的客户端"""
         raise NotImplementedError("open function should be implemented")
 
 
@@ -191,32 +201,38 @@ class DefaultAPIRequest(BaseAPIRequest):
 
     @property
     def session(self):
+        """初始化一个session实例，可以复用"""
         if not self._session:
             self._session = requests_retry_session()
         return self._session
 
     def open(self, data, files):
-        for f in list(files.values()):
-            f.seek(0)
+        """默认的open函数，使用requests"""
+        seek_files(files.values())
 
-        if len(files) == 0:
+        if not files:
             timeout = 5
         else:
             timeout = 20
 
         default_headers = {'Accept-Encoding': 'gzip', 'Connection': 'close'}
-        r = self.session.post(self.url, data, files=files, headers=default_headers, timeout=timeout)
+        resp = self.session.post(self.url, data, files=files, headers=default_headers, timeout=timeout)
 
         try:
-            return r.json()
+            return resp.json()
         except ValueError:
             try:
-                text = r.text.replace('\t', '\\t').replace('\n', '\\n').replace('\r', '\\r')
+                text = resp.text.replace('\t', '\\t').replace('\n', '\\n').replace('\r', '\\r')
                 return json.loads(text)
-            except ValueError as e:
+            except ValueError as err:
                 return {
-                    "error_response": {"msg": "json decode error", "sub_code": "ism.json-decode-error",
-                                       "code": 15, "sub_msg": "json-error: %s || %s" % (str(e), r.text)}}
+                    "error_response": {
+                        "msg": "json decode error",
+                        "sub_code": "ism.json-decode-error",
+                        "code": 15,
+                        "sub_msg": "json-error: %s || %s" % (str(err), resp.text)
+                    }
+                }
 
 
 class TaoBaoAPIError(Exception):
@@ -224,6 +240,7 @@ class TaoBaoAPIError(Exception):
 
     def __init__(self, request, code='', msg='', sub_code='', sub_msg='', request_id='', **kwargs):
         """TaoBao SDK Error, Raised From TaoBao"""
+        # pylint: disable=too-many-arguments
         self.request = request
         self.code = code
         self.msg = msg
@@ -235,28 +252,29 @@ class TaoBaoAPIError(Exception):
 
     def __repr__(self):
         return "{code}|{msg}|{sub_code}|{sub_msg}|{request_id}|{request}".format(
-            code=self.code, msg=self.msg, sub_code=self.sub_code, sub_msg=self.sub_msg,
-            request_id=self.request_id, request=self.request)
+            code=self.code, msg=self.msg, sub_code=self.sub_code, sub_msg=self.sub_msg, request_id=self.request_id, request=self.request)
 
     def __str__(self):
         """Build String For All the Request and Response"""
         return "{code}|{msg}|{sub_code}|{sub_msg}|{request_id}".format(
-            code=self.code, msg=self.msg, sub_code=self.sub_code, sub_msg=self.sub_msg,
-            request_id=self.request_id, request=self.request)
+            code=self.code, msg=self.msg, sub_code=self.sub_code, sub_msg=self.sub_msg, request_id=self.request_id)
 
     def str2(self):
         """Build String For the Request only"""
         return "{code}|{msg}|{sub_code}|{sub_msg}|{request_id}".format(
-            code=self.code, msg=self.msg, sub_code=self.sub_code, sub_msg=self.sub_msg,
-            request_id=self.request_id, request=self.request)
+            code=self.code, msg=self.msg, sub_code=self.sub_code, sub_msg=self.sub_msg, request_id=self.request_id)
 
 
 class HttpObject(object):
+    """根据函数名组装http请求"""
+
+    # pylint: disable=too-few-public-methods
     def __init__(self, client):
         self.client = client
 
     def __getattr__(self, attr):
         def wrap(**kw):
+            """根据函数名组装请求参数"""
             if attr.find('__') >= 0:
                 attr2 = attr.split('__', 2)
                 method = attr2[0] + '.' + attr2[1].replace('_', '.')
@@ -274,16 +292,18 @@ class HttpObject(object):
 class TaoBaoAPIClient(object):
     """API client using synchronized invocation."""
 
-    def __init__(self, app_key, app_secret, domain='https://eco.taobao.com', fetcher_class=DefaultAPIRequest,
-                 retry_sub_codes=None, retry_count=5, **kw):
+    # pylint: disable=too-many-instance-attributes
+    # Eight is reasonable in this case.
+    def __init__(self, app_key, app_secret, domain='https://eco.taobao.com', fetcher_class=DefaultAPIRequest, retry_sub_codes=None, retry_count=5, **kwargs):
         """Init API Client"""
+        # pylint: disable=too-many-arguments
         self.client_id = app_key
         self.client_secret = app_secret
         # support http and https prefix, do not add suffix slash(/)
         if domain.startswith("http://") or domain.startswith("https://"):
-            self.gw_url = '%s/router/rest' % (domain,)
+            self.gw_url = '%s/router/rest' % (domain, )
         else:
-            self.gw_url = 'http://%s/router/rest' % (domain,)
+            self.gw_url = 'http://%s/router/rest' % (domain, )
         self.access_token = None
         self.expires = 0.0
         self.fetcher_class = fetcher_class
@@ -292,7 +312,7 @@ class TaoBaoAPIClient(object):
         self.upload = HttpObject(self)
         self.retry_sub_codes = RETRY_SUB_CODES | (retry_sub_codes or set())
         self.retry_count = retry_count
-        self.kw = kw
+        self.kwargs = kwargs
 
     def set_access_token(self, access_token, expires_in=2147483647):
         """Set Default Access Token To This Client"""

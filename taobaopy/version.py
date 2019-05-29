@@ -1,2 +1,2 @@
-VERSION="6.0.0"
-
+"""The Current Version of this Package"""
+VERSION = "6.0.0"

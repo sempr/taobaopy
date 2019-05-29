@@ -1,14 +1,8 @@
 # coding:utf8
 
-
-import sys 
-if sys.version_info < (3, 0):
-    reload(sys) 
-    sys.setdefaultencoding("utf-8")
-
 import os
 import unittest
-
+import encoding
 from taobaopy.taobao import TaoBaoAPIClient, TaoBaoAPIError
 
 
@@ -48,7 +42,7 @@ if __name__ == '__main__':
 
     ch = logging.StreamHandler()
     ch.setLevel(logging.DEBUG)
-    
+
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     ch.setFormatter(formatter)
     logger.addHandler(ch)
