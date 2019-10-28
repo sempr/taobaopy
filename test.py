@@ -19,8 +19,10 @@ class TestTaobaoSDK(unittest.TestCase):
         self.assertEqual(list(r.keys()), ["time_get_response"])
 
     def test_tbk_item_get(self):
-        r = self.client.tbk_item_get(q="abc", fields="num_iid,title,pict_url,zk_final_price", page_size=2)
-        self.assertEqual(list(r.keys()), ["tbk_item_get_response"])
+        try:
+            r = self.client.tbk_item_get(q="abc", fields="num_iid,title,pict_url,zk_final_price", page_size=2)
+        except TaoBaoAPIError as e:
+            self.assertEqual(e.code, 22)
 
     def test_error_response(self):
         try:
