@@ -2,7 +2,6 @@
 
 import os
 import unittest
-import encoding
 from taobaopy.taobao import TaoBaoAPIClient, TaoBaoAPIError
 
 
@@ -18,22 +17,29 @@ class TestTaobaoSDK(unittest.TestCase):
         r = self.client.time_get()
         self.assertEqual(list(r.keys()), ["time_get_response"])
 
+    def test_demo(self):
+        self.client.appip_get()
+
     def test_tbk_item_get(self):
         try:
-            r = self.client.tbk_item_get(q="abc", fields="num_iid,title,pict_url,zk_final_price", page_size=2)
+            self.client.tbk_item_get(q="abc", fields="num_iid,title,pict_url,zk_final_price", page_size=2)
+            self.assertFalse(True)
         except TaoBaoAPIError as e:
             self.assertEqual(e.code, 22)
 
     def test_error_response(self):
         try:
             self.client.tbb_abcd(q="abc")
+            self.assertFalse(True)
         except TaoBaoAPIError as e:
             self.assertEqual(e.code, 22)
 
     def test_error_response2(self):
         try:
             self.client.ump_tools_get(q="abc")
+            self.assertFalse(True)
         except TaoBaoAPIError as e:
+            self.assertTrue(str(e).startswith("11|Insufficient isv permissions|isv.permission-api-package-limit"))
             self.assertEqual(e.code, 11)
 
 
