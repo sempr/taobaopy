@@ -1,5 +1,5 @@
 
-![TavisCI Status](https://travis-ci.org/sempr/taobaopy.svg?branch=master)
+![Build Status](https://github.com/sempr/taobaopy/workflows/Python%20application/badge.svg)
 
 # 简介
 
