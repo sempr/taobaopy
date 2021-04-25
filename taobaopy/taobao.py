@@ -21,7 +21,6 @@ import hashlib
 import json
 import time
 import hmac
-import math
 import logging
 from datetime import datetime
 import requests
@@ -173,11 +172,10 @@ class BaseAPIRequest(object):
                 sub_code = ret['error_response'].get('sub_code')
                 if sub_code in self.retry_sub_codes:
                     continue
-                elif sub_code == 'accesscontrol.limited-by-api-access-count':
+                elif sub_code in {'accesscontrol.limited-by-api-access-count', 'isp.call-limited'}:
                     if try_id < self.client.retry_count - 1:
-                        ts_sleep = 0.1 * math.pow(2, try_id)
-                        TB_LOG.warning("meet access-control, sleep %.3lf seconds", ts_sleep)
-                        time.sleep(ts_sleep)
+                        TB_LOG.warning("meet access-control, sleep 1 seconds")
+                        time.sleep(1)
                     continue
             break
 
